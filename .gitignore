@@ -11,3 +11,7 @@ htmlcov
 venv
 credentials.json
 token.pickle
+rfidtest/
+/rfid_reader/build
+/rfid_reader/install
+/rfid_reader/log

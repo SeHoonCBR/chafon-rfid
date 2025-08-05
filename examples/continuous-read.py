@@ -105,7 +105,7 @@ def read_tags(reader_addr, appender):
             get_inventory_cmd = G2InventoryCommand(q_value=4, antenna=0x80)
             frame_type = G2InventoryResponseFrame
             set_power(transport, 26)
-            set_buzzer_enabled(transport, True)
+            set_buzzer_enabled(transport, False)
         elif reader_type in (ReaderType.RRU9803M, ReaderType.RRU9803M_1):
             get_inventory_cmd = ReaderCommand(G2_TAG_INVENTORY)
             frame_type = G2InventoryResponseFrame18
@@ -117,7 +117,7 @@ def read_tags(reader_addr, appender):
         print('Unknown reader type: {}'.format(e))
         sys.exit(1)
 
-    verbose = False
+    verbose = True
     running = True
     response_times = []
     tag_counts = {}
@@ -132,19 +132,17 @@ def read_tags(reader_addr, appender):
                 resp = frame_type(transport.read_frame())
                 inventory_status = resp.result_status
                 for tag in resp.get_tag():
+                    if not is_marathon_tag(tag):
+                        continue
                     tag_id = tag.epc.hex()
                     tag_counts[tag_id] = tag_counts.get(tag_id, 0) + 1
-                    if is_marathon_tag(tag):
-                        boat_num = (tag.epc.lstrip(bytearray([0]))).decode('ascii')
-                        boat_time = str(now)[:12]
-                        rssi = tag.rssi
-                        if verbose:
-                            print('{0} {1} {2}'.format(boat_num, boat_time, rssi))
-                        if appender is not None:
-                            appender.add_row([boat_num, boat_time, '', ''])
-                    else:
-                        if verbose:
-                            print("Non-marathon tag 0x%s" % (tag.epc.hex()))
+                    boat_num = (tag.epc.lstrip(bytearray([0]))).decode('ascii')
+                    boat_time = str(now)[:12]
+                    rssi = tag.rssi
+                    if verbose:
+                        print('{0} {1} {2}'.format(boat_num, boat_time, rssi))
+                    if appender is not None:
+                        appender.add_row([boat_num, boat_time, '', ''])
                     if tag.rssi is not None:
                         if tag_id not in rssi_values:
                             rssi_values[tag_id] = []
